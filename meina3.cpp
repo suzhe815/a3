@@ -70,8 +70,8 @@ Vector GaussSeidel(Matrix& A, Vector& x0, Vector& b, double& tol, int& maxiter, 
 	size_t n = x0.getLength();
 
 	// speichere die Zwischenergebnisse auf xk und am Ende gib xk als die annaehrende Loesung zurueck.
-	Vector xk = x0;;
-
+	Vector xk = x0;
+	Vector tmp_xk = xk;
 	// //Berechnung des Residuums
 	Vector residuum = b - A * xk;
 
@@ -79,14 +79,19 @@ Vector GaussSeidel(Matrix& A, Vector& x0, Vector& b, double& tol, int& maxiter, 
 	// speichere den rel.Fehler jedes Schrittes jeweils auf der 0,..k,... Stelle von rResiduumJ
 	rResiduumGS(k) = residuum.norm2() / b.norm2();
 
-	double sum1 = 0, sum2 = 0;
+	double sum1 = 0;
+	double sum2 = 0;
 
 	while (rResiduumGS(k) >= tol && k < maxiter)
 	{
+		
 		// in sum2 muss man das x_k in letztem schritt verwenden 
-		Vector tmp_xk = xk;
+		
 		for (size_t i = 0; i < n; i++)
 		{
+			// in jedem schritt muessen sum1 und sum2  wieder als 0 eingesetzt werden
+			sum1 = 0;
+			sum2 = 0;
 			// Unterscheide den Fall x_k+1(1) und den Rest von x_k+1
 			// Beachte dazu, dass im Programm A(0,0) = "A(1,1) schreibweise im Buch"
 			// Berechne zunaechst die zweite Summation in GS Verfahren:
@@ -94,6 +99,7 @@ Vector GaussSeidel(Matrix& A, Vector& x0, Vector& b, double& tol, int& maxiter, 
 			// die erste Summantion tritt nur fuer die 2-te bis n-te Komponente von x_k+1 auf
 			if (i > 0)
 			{
+				
 				for (size_t j = 0; j <= i - 1;j++)
 				{
 					sum1 = sum1 + A(i, j) * xk(j);
@@ -107,6 +113,7 @@ Vector GaussSeidel(Matrix& A, Vector& x0, Vector& b, double& tol, int& maxiter, 
 			xk(i) = (1 / A(i, i)) * (b(i) - sum1 - sum2);
 			
 		}
+		tmp_xk = xk;
 		k = k + 1;
 		residuum = b - A * xk;
 		rResiduumGS(k) = residuum.norm2() / b.norm2();
@@ -144,22 +151,23 @@ Vector CG(Matrix& A, Vector& x0, Vector& b, double& tol, int& maxiter, int& iter
 	Vector rk = residuum;
 	double gammak = residuum * residuum;
 	double alphak = gammak / (qk * pk);
-
+	double tmp_gammak = gammak;
 	//CG Verfahren wie im Ue3
 	while (rResiduumCG(k) >= tol && k < maxiter)
 	{
 		xk = xk + alphak * pk;
 		rk = rk - alphak * qk;
-		double tmp_gammak = gammak;
+		
 		gammak = rk * rk;
 		pk = rk + (gammak / tmp_gammak) * pk;
-
+		tmp_gammak = gammak;
 		residuum = b - A * xk;
 		k = k + 1;
 		rResiduumCG(k) = residuum.norm2() / b.norm2();
 		// jetzt muessen noch qk und alphak akutalisiert werden
 		qk = A * pk;
 		alphak = gammak / (qk * pk);
+		
 	}
 
 	iterationenCG = k;
@@ -189,10 +197,10 @@ int main(int argc, char* argv[])
 	
 	else
 	{
-		Matrix A(2, 2);
-		Vector b(2);
-		Vector x0(2);
-		double tol = 0.0;
+		Matrix A;
+		Vector b;
+		Vector x0;
+		double tol = 0;
 		int maxiter = 0;
 
 		// Iterationsvariablen werden an Algorithmen Ã¼bergeben und in diesen verÃ¤ndert, sodass nach Durchlauf der Algorithmen die Anzahl der Iterationen in diesen gespeichert ist
@@ -246,7 +254,7 @@ int main(int argc, char* argv[])
 
 		}
 
-		else if (j == 3)
+		else if (j == 2)
 		{
 			getExample(i, A, x0, b, tol, maxiter);
 			Vector rResiduumCG(maxiter + 1);
